@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Real time web chat</title>
+  </head>
+
+  <body>
+    <div
+      id="content"
+      style="
+        width: 500px;
+        height: 300px;
+        margin: 0 0 20px 0;
+        border: solid 1px #999;
+        overflow-y: scroll;
+      "
+    ></div>
+
+    <div class="controls">
+      Name: <input id="name" style="width: 350px" /><br />Message :
+      <input id="field" style="width: 350px" />
+      <input id="send" type="button" value="send" />
+    </div>
+
+    <script>
+      const messages = [];
+      const name = document.getElementById("name");
+      const field = document.getElementById("field");
+
+      const ws = new WebSocket("ws://" + location.host);
+
+      const sendButton = document.getElementById("send");
+      const content = document.getElementById("content");
+
+      ws.onmessage = (ev) => {
+        const data = JSON.parse(ev.data);
+        if (data.message) {
+          messages.push(data);
+          var html = "";
+          for (var i = 0; i < messages.length; i++) {
+            html +=
+              "<b>" +
+              (messages[i].username ? messages[i].username : "Server") +
+              ": </b>";
+            html += messages[i].message + "<br />";
+          }
+          content.innerHTML = html;
+          content.scrollTop = content.scrollHeight;
+        } else {
+          console.log("There is a problem:", data);
+        }
+      };
+
+      sendButton.onclick = function () {
+        if (name.value == "") {
+          alert("Please type your name!");
+        } else {
+          var text = field.value;
+          ws.send(JSON.stringify({ message: text, username: name.value }));
+          field.value = "";
+        }
+      };
+      field.addEventListener("keypress", function (e) {
+        var key = e.which || e.keyCode;
+        if (key === 13) {
+          sendButton.onclick();
+        }
+      });
+      ws.onerror = console.error;
+    </script>
+  </body>
+</html>
